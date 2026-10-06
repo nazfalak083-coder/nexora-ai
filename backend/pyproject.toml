@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "NEXORA AI business chatbot"
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi>=0.110",
+    "fastapi[standard]>=0.110",
     "uvicorn[standard]>=0.27",
     "httpx>=0.27",
     "python-dotenv>=1.0",
