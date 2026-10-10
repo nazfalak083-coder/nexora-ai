@@ -1,345 +1,182 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
-  LayoutDashboard,
-  Users,
-  MessageSquare,
-  Bot,
-  Settings,
-  Activity,
-  ArrowUpRight,
-  Clock,
-  ShieldCheck,
+  LayoutDashboard, Users, MessageSquare, Bot, Activity,
+  Settings, ArrowLeft, Zap, ShieldCheck, Plus, Trash2
 } from "lucide-react";
 
-const stats = [
-  { label: "Total Leads", value: "—", icon: Users },
-  { label: "Conversations", value: "—", icon: MessageSquare },
-  { label: "Automations", value: "0", icon: Bot },
-  { label: "System Status", value: "Checking", icon: Activity },
+const items = [
+  ["Overview", LayoutDashboard],
+  ["Leads", Users],
+  ["Conversations", MessageSquare],
+  ["Automation", Bot],
+  ["Analytics", Activity],
+  ["Settings", Settings],
 ];
 
-export default function Admin() {
-  return (
-    <div style={styles.app}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <div style={styles.logo}>N</div>
-          <div>
-            <strong>NEXORA</strong>
-            <div style={styles.muted}>AI CONTROL CENTER</div>
-          </div>
+const cardStyle = {
+  background: "#fff",
+  border: "1px solid #e9e5f5",
+  borderRadius: 16,
+  padding: 22,
+  boxShadow: "0 5px 20px #5341a008",
+};
+
+export default function Admin({ onBack = () => {} }) {
+  const [page, setPage] = useState("Overview");
+  const [automations, setAutomations] = useState([
+    { name: "Welcome message", detail: "Greet new visitors", on: true },
+    { name: "Lead collection", detail: "Collect customer enquiries", on: true },
+    { name: "Follow-up reminders", detail: "Remind your team to follow up", on: false },
+  ]);
+  const [settings, setSettings] = useState({
+    notifications: true,
+    maintenance: false,
+  });
+
+  const heading = {
+    Overview: "Dashboard Overview",
+    Leads: "Lead Management",
+    Conversations: "Conversations",
+    Automation: "Automation Center",
+    Analytics: "Workspace Analytics",
+    Settings: "Workspace Settings",
+  };
+
+  function renderContent() {
+    if (page === "Overview") {
+      return <>
+        <div style={{ ...cardStyle, background: "linear-gradient(120deg,#f0eaff,#eaf3ff)", marginBottom: 20 }}>
+          <h2 style={{ margin: "0 0 8px" }}>Welcome to NEXORA AI ✨</h2>
+          <p style={{ color: "#696780", margin: 0 }}>Manage your business AI workspace in one place.</p>
         </div>
-
-        <div style={styles.section}>WORKSPACE</div>
-
-        {[
-          [LayoutDashboard, "Overview"],
-          [Users, "Leads"],
-          [MessageSquare, "Conversations"],
-          [Bot, "Automation"],
-          [Activity, "Analytics"],
-          [Settings, "Settings"],
-        ].map(([Icon, label], index) => (
-          <div
-            key={label}
-            style={{
-              ...styles.navItem,
-              ...(index === 0 ? styles.active : {}),
-            }}
-          >
-            <Icon size={18} />
-            <span>{label}</span>
-            {index === 0 && <ArrowUpRight size={15} style={{ marginLeft: "auto" }} />}
-          </div>
-        ))}
-
-        <div style={styles.sidebarBottom}>
-          <ShieldCheck size={18} color="#b7a0ff" />
-          <div>
-            <strong style={{ fontSize: 12 }}>Admin workspace</strong>
-            <div style={styles.muted}>Connect authentication before launch</div>
-          </div>
-        </div>
-      </aside>
-
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div>
-            <div style={styles.muted}>WORKSPACE / OVERVIEW</div>
-            <h1 style={styles.heading}>Dashboard</h1>
-            <p style={styles.subtitle}>
-              Monitor your NEXORA AI workspace.
-            </p>
-          </div>
-          <div style={styles.status}>
-            <span style={styles.dot} />
-            Dashboard preview
-          </div>
-        </header>
-
-        <section style={styles.welcome}>
-          <div>
-            <div style={styles.eyebrow}>NEXORA AI PLATFORM</div>
-            <h2 style={styles.welcomeTitle}>Your business, at a glance.</h2>
-            <p style={styles.subtitle}>
-              Manage leads, monitor conversations, and review activity.
-            </p>
-          </div>
-          <div style={styles.orb}>✳</div>
-        </section>
-
-        <section style={styles.stats}>
-          {stats.map(({ label, value, icon: Icon }) => (
-            <div key={label} style={styles.card}>
-              <div style={styles.cardTop}>
-                <span style={styles.muted}>{label}</span>
-                <Icon size={19} color="#b7a0ff" />
-              </div>
-              <div style={styles.statValue}>{value}</div>
-              <div style={styles.cardFoot}>Awaiting live data connection</div>
+        <div style={grid}>
+          {[
+            ["Total Leads", "—", Users],
+            ["Conversations", "—", MessageSquare],
+            ["Automations", automations.filter(a => a.on).length, Bot],
+            ["System Status", "Check API", Activity],
+          ].map(([label, value, Icon]) => (
+            <div key={label} style={cardStyle}>
+              <Icon color="#8170d9" size={22} />
+              <p style={{ color: "#77748e", marginBottom: 8 }}>{label}</p>
+              {label === "Total Leads" ? (
+                <div style={ring}><div style={ringInner}>{value}</div></div>
+              ) : <strong style={{ fontSize: 25 }}>{value}</strong>}
             </div>
           ))}
-        </section>
-
-        <section style={styles.bottomGrid}>
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <div>
-                <h3 style={styles.panelTitle}>Recent activity</h3>
-                <p style={styles.muted}>Latest workspace events</p>
-              </div>
-              <Activity size={19} color="#b7a0ff" />
-            </div>
-            <div style={styles.empty}>
-              <Clock size={25} color="#8e80b9" />
-              <strong>No activity loaded yet</strong>
-              <span style={styles.muted}>
-                Connect the backend to show real events here.
-              </span>
-            </div>
-          </div>
-
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <div>
-                <h3 style={styles.panelTitle}>System overview</h3>
-                <p style={styles.muted}>Configuration checklist</p>
-              </div>
-              <ShieldCheck size={19} color="#b7a0ff" />
-            </div>
-            {[
-              ["Chat interface", "Already deployed"],
-              ["Lead storage", "Backend available"],
-              ["Live analytics", "Not connected"],
-              ["Admin security", "Not configured"],
-            ].map(([label, value]) => (
-              <div key={label} style={styles.checkRow}>
-                <span style={styles.checkDot} />
-                <span>{label}</span>
-                <span style={styles.checkValue}>{value}</span>
-              </div>
+        </div>
+        <div style={{ ...cardStyle, marginTop: 20 }}>
+          <h3>Quick actions</h3>
+          <div style={grid}>
+            {items.slice(1).map(([name, Icon]) => (
+              <button key={name} style={quickButton} onClick={() => setPage(name)}>
+                <Icon size={18} /> {name} →
+              </button>
             ))}
           </div>
-        </section>
+        </div>
+      </>;
+    }
 
-        <footer style={styles.footer}>
-          NEXORA AI · ADMIN CONSOLE · PREVIEW
-        </footer>
-      </main>
-    </div>
-  );
+    if (page === "Leads") return <div style={cardStyle}>
+      <Users color="#8170d9" size={28} />
+      <h2>Leads</h2>
+      <p style={muted}>Customer enquiries and contact records.</p>
+      <p>Live lead records require the backend leads endpoint to be connected.</p>
+      <button style={button} onClick={() => setPage("Settings")}>Check workspace setup</button>
+    </div>;
+
+    if (page === "Conversations") return <div style={cardStyle}>
+      <MessageSquare color="#8170d9" size={28} />
+      <h2>Conversations</h2>
+      <p style={muted}>Review customer conversations with your AI assistant.</p>
+      <p>Conversation history will appear here when a history endpoint is connected.</p>
+    </div>;
+
+    if (page === "Automation") return <div style={cardStyle}>
+      <Bot color="#8170d9" size={28} />
+      <h2>Automation rules</h2>
+      <p style={muted}>Toggle the workspace rules below. These switches control this dashboard UI.</p>
+      {automations.map((a, i) => <div key={a.name} style={rule}>
+        <div><strong>{a.name}</strong><p style={muted}>{a.detail}</p></div>
+        <button style={{ ...button, background: a.on ? "#7662d8" : "#aaa6ba" }}
+          onClick={() => setAutomations(old => old.map((x, j) => i === j ? { ...x, on: !x.on } : x))}>
+          {a.on ? "ON" : "OFF"}
+        </button>
+      </div>)}
+    </div>;
+
+    if (page === "Analytics") return <div style={cardStyle}>
+      <Activity color="#8170d9" size={28} />
+      <h2>Analytics</h2>
+      <p style={muted}>Usage and performance overview.</p>
+      <div style={grid}>
+        <div style={miniCard}><strong>—</strong><p>Messages processed</p></div>
+        <div style={miniCard}><strong>—</strong><p>Lead conversion rate</p></div>
+        <div style={miniCard}><strong>—</strong><p>Average response time</p></div>
+      </div>
+      <p>Connect real backend metrics to display live analytics.</p>
+    </div>;
+
+    return <div style={cardStyle}>
+      <Settings color="#8170d9" size={28} />
+      <h2>Settings</h2>
+      <p style={muted}>Manage dashboard preferences.</p>
+      {[
+        ["notifications", "Dashboard notifications"],
+        ["maintenance", "Maintenance mode indicator"],
+      ].map(([key, label]) => <div key={key} style={rule}>
+        <strong>{label}</strong>
+        <button style={{ ...button, background: settings[key] ? "#7662d8" : "#aaa6ba" }}
+          onClick={() => setSettings(s => ({ ...s, [key]: !s[key] }))}>
+          {settings[key] ? "ON" : "OFF"}
+        </button>
+      </div>)}
+      <p style={muted}>These preferences are currently temporary and reset on refresh.</p>
+    </div>;
+  }
+
+  return <div style={app}>
+    <aside style={sidebar}>
+      <div style={brand}><span style={logo}>N</span><div><strong>NEXORA</strong><small>AI WORKSPACE</small></div></div>
+      <p style={section}>WORKSPACE</p>
+      {items.map(([name, Icon]) => <button key={name}
+        onClick={() => setPage(name)}
+        style={{ ...nav, ...(page === name ? active : {}) }}>
+        <Icon size={18} /> {name}
+      </button>)}
+      <div style={{ marginTop: "auto", ...cardStyle, padding: 14 }}>
+        <ShieldCheck color="#8170d9" size={20} />
+        <strong style={{ display: "block", marginTop: 8 }}>Admin workspace</strong>
+        <small style={muted}>Add authentication before public launch.</small>
+      </div>
+    </aside>
+    <main style={main}>
+      <header style={top}>
+        <div><small style={muted}>WORKSPACE / {page.toUpperCase()}</small><h1 style={{ margin: "8px 0" }}>{heading[page]}</h1></div>
+        <button style={button} onClick={onBack}><ArrowLeft size={16} /> Back to AI</button>
+      </header>
+      {renderContent()}
+      <footer style={{ textAlign: "center", color: "#9691aa", marginTop: 30, fontSize: 11 }}>NEXORA AI · WORKSPACE</footer>
+    </main>
+  </div>;
 }
 
-const styles = {
-  app: {
-    minHeight: "100vh",
-    background: "#0a0910",
-    color: "#f4f0ff",
-    display: "flex",
-    fontFamily: "Inter, Arial, sans-serif",
-    fontSize: 14,
-  },
-  sidebar: {
-    width: 235,
-    flexShrink: 0,
-    background: "#0e0c16",
-    borderRight: "1px solid #252033",
-    padding: "27px 16px",
-    display: "flex",
-    flexDirection: "column",
-    boxSizing: "border-box",
-  },
-  brand: { display: "flex", alignItems: "center", gap: 11, marginBottom: 42 },
-  logo: {
-    width: 39,
-    height: 39,
-    display: "grid",
-    placeItems: "center",
-    borderRadius: 12,
-    background: "linear-gradient(135deg,#b7a0ff,#7650db)",
-    color: "#100b1e",
-    fontSize: 23,
-    fontWeight: 900,
-  },
-  muted: { color: "#8e879f", fontSize: 12 },
-  section: {
-    color: "#746d85",
-    fontSize: 10,
-    letterSpacing: 2,
-    margin: "0 0 13px 9px",
-  },
-  navItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "12px 10px",
-    marginBottom: 5,
-    borderRadius: 9,
-    color: "#aaa2bb",
-  },
-  active: {
-    background: "#211932",
-    color: "#d3c4ff",
-    border: "1px solid #34254d",
-  },
-  sidebarBottom: {
-    marginTop: "auto",
-    border: "1px solid #302442",
-    borderRadius: 12,
-    padding: 12,
-    display: "flex",
-    gap: 10,
-    alignItems: "flex-start",
-  },
-  main: {
-    flex: 1,
-    minWidth: 0,
-    padding: "35px clamp(18px, 4vw, 52px)",
-    boxSizing: "border-box",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    gap: 15,
-    marginBottom: 28,
-  },
-  heading: { fontSize: 30, margin: "9px 0 6px", letterSpacing: -1 },
-  subtitle: { color: "#9991aa", margin: "7px 0 0", lineHeight: 1.6 },
-  status: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    border: "1px solid #332b43",
-    background: "#14111d",
-    borderRadius: 30,
-    padding: "9px 13px",
-    color: "#bdb4cf",
-    fontSize: 12,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: "50%",
-    background: "#c4a8ff",
-  },
-  welcome: {
-    background: "linear-gradient(110deg,#211832,#171322 75%)",
-    border: "1px solid #39294e",
-    borderRadius: 17,
-    padding: "27px 29px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 20,
-    marginBottom: 21,
-  },
-  eyebrow: {
-    color: "#b9a0ff",
-    fontSize: 10,
-    letterSpacing: 2,
-    fontWeight: 700,
-  },
-  welcomeTitle: { fontSize: 24, margin: "12px 0 7px", letterSpacing: -0.6 },
-  orb: {
-    width: 65,
-    height: 65,
-    borderRadius: 20,
-    display: "grid",
-    placeItems: "center",
-    fontSize: 37,
-    color: "#d4c5ff",
-    background: "radial-gradient(circle at 30% 25%,#7957b4,#2b1d40)",
-    flexShrink: 0,
-  },
-  stats: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(175px,1fr))",
-    gap: 15,
-    marginBottom: 20,
-  },
-  card: {
-    background: "#12101a",
-    border: "1px solid #292337",
-    borderRadius: 14,
-    padding: 18,
-    minWidth: 0,
-  },
-  cardTop: { display: "flex", justifyContent: "space-between", gap: 8 },
-  statValue: { fontSize: 27, fontWeight: 700, margin: "18px 0 12px" },
-  cardFoot: { color: "#776f87", fontSize: 11 },
-  bottomGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
-    gap: 17,
-  },
-  panel: {
-    background: "#12101a",
-    border: "1px solid #292337",
-    borderRadius: 14,
-    padding: 20,
-    minWidth: 0,
-  },
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 22,
-  },
-  panelTitle: { fontSize: 15, margin: "0 0 6px" },
-  empty: {
-    minHeight: 130,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    gap: 12,
-  },
-  checkRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 9,
-    padding: "13px 0",
-    borderBottom: "1px solid #282235",
-    fontSize: 12,
-    flexWrap: "wrap",
-  },
-  checkDot: {
-    width: 7,
-    height: 7,
-    borderRadius: "50%",
-    background: "#8c76b8",
-  },
-  checkValue: { color: "#9990ab", marginLeft: "auto", fontSize: 11 },
-  footer: {
-    textAlign: "center",
-    color: "#615a70",
-    fontSize: 10,
-    letterSpacing: 2,
-    marginTop: 30,
-  },
-};
+const app = { minHeight: "100vh", display: "flex", background: "#f7f6fc", color: "#28243b", fontFamily: "Inter,Arial,sans-serif" };
+const sidebar = { width: 235, flexShrink: 0, background: "#fff", borderRight: "1px solid #e9e5f5", padding: 20, display: "flex", flexDirection: "column", gap: 7, boxSizing: "border-box" };
+const brand = { display: "flex", alignItems: "center", gap: 12, marginBottom: 25 };
+const logo = { width: 40, height: 40, display: "grid", placeItems: "center", borderRadius: 12, color: "#fff", fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#9b83f4,#648ce9)" };
+const section = { fontSize: 10, letterSpacing: 2, color: "#9691aa", margin: "8px 0" };
+const nav = { display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "12px", border: 0, borderRadius: 10, background: "transparent", color: "#77748e", cursor: "pointer", fontSize: 14 };
+const active = { background: "#f0ebff", color: "#7058ce", fontWeight: 700 };
+const main = { flex: 1, minWidth: 0, padding: "32px clamp(16px,4vw,44px)", boxSizing: "border-box" };
+const top = { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 28 };
+const muted = { color: "#85819a", fontSize: 12 };
+const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 16 };
+const miniCard = { background: "#f6f3ff", padding: 16, borderRadius: 12 };
+const button = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 14px", border: 0, borderRadius: 9, background: "#7662d8", color: "#fff", cursor: "pointer" };
+const quickButton = { display: "flex", alignItems: "center", gap: 10, padding: 15, border: "1px solid #e9e5f5", borderRadius: 10, background: "#fff", color: "#50476d", cursor: "pointer" };
+const rule = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 0", borderBottom: "1px solid #eeeaf6" };
+const ring = { width: 72, height: 72, borderRadius: "50%", padding: 4, marginTop: 12, background: "conic-gradient(#ff5e7e,#ffb65e,#f7e75b,#5be7a9,#59a9ff,#9d71ff,#ff5e7e)", display: "grid", placeItems: "center" };
+const ringInner = { width: "100%", height: "100%", borderRadius: "50%", display: "grid", placeItems: "center", background: "#fff", fontSize: 21, fontWeight: 800 };
