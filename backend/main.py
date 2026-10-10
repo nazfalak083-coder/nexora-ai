@@ -13,14 +13,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+
 load_dotenv()
 
+
 DB_PATH = Path(__file__).with_name("nexora.db")
+
 
 app = FastAPI(
     title="NEXORA AI API",
     version="1.0.0"
 )
+
 
 # =========================================================
 # CORS
@@ -148,6 +152,8 @@ Approved business information:
 
 Rules:
 - Answer clearly, warmly, and concisely.
+- Keep normal answers under 80 words.
+- Give only the information needed to answer the user's question.
 - Use only approved business information for business-specific facts.
 - Never invent prices, policies, stock, delivery dates, guarantees, or contact details.
 - If information is missing, say so and offer to connect the customer with the team.
@@ -233,6 +239,10 @@ async def chat(payload: ChatRequest):
     ).rstrip("/")
 
 
+    # =====================================================
+    # SPEED-OPTIMIZED REQUEST
+    # =====================================================
+
     body = {
         "model": model,
 
@@ -243,7 +253,13 @@ async def chat(payload: ChatRequest):
             }
         ] + clean,
 
-        "temperature": 0.4,
+        # Lower temperature = more direct responses
+        "temperature": 0.2,
+
+        # Limit unnecessarily long answers
+        "max_tokens": 120,
+
+        # Keep streaming enabled
         "stream": True
     }
 
@@ -261,9 +277,10 @@ async def chat(payload: ChatRequest):
 
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(
-                60.0,
-                connect=15.0
-            )
+                30.0,
+                connect=5.0
+            ),
+            http2=True
         ) as client:
 
             for attempt in range(3):
@@ -412,6 +429,7 @@ async def chat(payload: ChatRequest):
                     return
 
 
+    # Save conversation quickly
     with db() as conn:
 
         conn.execute(
