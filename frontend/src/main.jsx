@@ -6,7 +6,7 @@ import {
   Sparkles, ArrowUpRight, Building2, Headphones, Globe2,
   UserRound, CheckCircle2, LayoutDashboard
 } from 'lucide-react';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from './admin';
 import './style.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
