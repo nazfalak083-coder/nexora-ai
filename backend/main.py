@@ -187,6 +187,7 @@ def health():
     }
 
 
+
 # =========================================================
 # CHAT
 # =========================================================
@@ -194,28 +195,18 @@ def health():
 @app.post("/api/chat")
 async def chat(payload: ChatRequest):
 
-    api_key = os.getenv(
-        "LLM_API_KEY",
-        ""
-    ).strip()
+    api_key = os.getenv("LLM_API_KEY", "").strip()
 
     if not api_key or api_key == "put_your_provider_key_here":
-
         raise HTTPException(
             status_code=503,
             detail="LLM API key is not configured."
         )
 
-
     clean = []
 
     for message in payload.messages:
-
-        if message.role not in (
-            "user",
-            "assistant"
-        ):
-
+        if message.role not in ("user", "assistant"):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid message role."
@@ -226,212 +217,139 @@ async def chat(payload: ChatRequest):
             "content": message.content
         })
 
-
     model = os.getenv(
         "LLM_MODEL",
         "gemini-flash-latest"
     ).strip()
-
 
     base = os.getenv(
         "LLM_BASE_URL",
         "https://generativelanguage.googleapis.com/v1beta/openai"
     ).rstrip("/")
 
-
-    # =====================================================
-    # SPEED-OPTIMIZED REQUEST
-    # =====================================================
-
     body = {
         "model": model,
-
         "messages": [
             {
                 "role": "system",
                 "content": system_prompt()
             }
         ] + clean,
-
-        # Lower temperature = more direct responses
         "temperature": 0.2,
-
-        # Limit unnecessarily long answers
         "max_tokens": 120,
-
-        # Keep streaming enabled
         "stream": True
     }
 
-
-    retry_statuses = (
-        429,
-        500,
-        502,
-        503,
-        504
-    )
-
+    retry_statuses = (429, 500, 502, 503, 504)
 
     async def stream():
 
+        # HTTP/2 disabled to test upstream protocol errors.
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(
-                30.0,
-                connect=5.0
+                60.0,
+                connect=10.0
             ),
-            http2=True
+            http2=False
         ) as client:
 
             for attempt in range(3):
 
                 try:
-
                     async with client.stream(
                         "POST",
                         base + "/chat/completions",
-
                         headers={
                             "Authorization": f"Bearer {api_key}",
                             "Content-Type": "application/json"
                         },
-
                         json=body
-
                     ) as response:
 
-
                         if response.status_code >= 400:
-
                             detail = (
-                                (
-                                    await response.aread()
-                                )
-                                .decode(
-                                    "utf-8",
-                                    "ignore"
-                                )[:1000]
+                                (await response.aread())
+                                .decode("utf-8", "ignore")[:1000]
                             )
 
-
                             if (
-                                response.status_code
-                                in retry_statuses
+                                response.status_code in retry_statuses
                                 and attempt < 2
                             ):
-
-                                await asyncio.sleep(
-                                    attempt + 1
-                                )
-
+                                await asyncio.sleep(attempt + 1)
                                 continue
-
 
                             yield (
                                 "data: "
                                 + json.dumps({
-                                    "error":
+                                    "error": (
                                         f"LLM provider error "
                                         f"({response.status_code}): "
                                         f"{detail}"
+                                    )
                                 })
                                 + "\n\n"
                             )
-
                             return
-
 
                         async for line in response.aiter_lines():
 
                             if not line.startswith("data:"):
                                 continue
 
-
                             raw = line[5:].strip()
 
-
                             if raw == "[DONE]":
-
-                                yield (
-                                    "data: [DONE]\n\n"
-                                )
-
+                                yield "data: [DONE]\n\n"
                                 return
 
-
                             try:
-
                                 obj = json.loads(raw)
 
+                                choices = obj.get("choices", [])
+                                if not choices:
+                                    continue
+
                                 delta = (
-                                    obj
-                                    .get(
-                                        "choices",
-                                        [{}]
-                                    )[0]
-                                    .get(
-                                        "delta",
-                                        {}
-                                    )
-                                    .get(
-                                        "content"
-                                    )
+                                    choices[0]
+                                    .get("delta", {})
+                                    .get("content")
                                 )
 
-
                                 if delta:
-
                                     yield (
                                         "data: "
-                                        + json.dumps({
-                                            "content": delta
-                                        })
+                                        + json.dumps({"content": delta})
                                         + "\n\n"
                                     )
-
 
                             except (
                                 json.JSONDecodeError,
                                 IndexError,
-                                KeyError
+                                KeyError,
+                                TypeError
                             ):
-
                                 continue
 
-
-                        yield (
-                            "data: [DONE]\n\n"
-                        )
-
+                        yield "data: [DONE]\n\n"
                         return
 
-
                 except httpx.HTTPError:
-
                     if attempt < 2:
-
-                        await asyncio.sleep(
-                            attempt + 1
-                        )
-
+                        await asyncio.sleep(attempt + 1)
                         continue
-
 
                     yield (
                         "data: "
                         + json.dumps({
-                            "error":
-                                "Could not reach the LLM provider."
+                            "error": "Could not reach the LLM provider."
                         })
                         + "\n\n"
                     )
-
                     return
 
-
-    # Save conversation quickly
+    # Record the conversation.
     with db() as conn:
-
         conn.execute(
             """
             INSERT INTO conversations(created_at)
@@ -440,13 +358,11 @@ async def chat(payload: ChatRequest):
             (int(time.time()),)
         )
 
-
     return StreamingResponse(
         stream(),
         media_type="text/event-stream",
-
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no"
         }
     )
@@ -455,72 +371,3 @@ async def chat(payload: ChatRequest):
 # =========================================================
 # LEADS
 # =========================================================
-
-@app.post("/api/leads")
-def create_lead(
-    payload: LeadRequest
-):
-
-    if (
-        "@" not in payload.email
-        or "." not in payload.email.split("@")[-1]
-    ):
-
-        raise HTTPException(
-            status_code=422,
-            detail="Please enter a valid email address."
-        )
-
-
-    with db() as conn:
-
-        conn.execute(
-            """
-            INSERT INTO leads(
-                name,
-                email,
-                message,
-                created_at
-            )
-            VALUES(?,?,?,?)
-            """,
-
-            (
-                payload.name.strip(),
-                payload.email.strip(),
-                payload.message.strip(),
-                int(time.time())
-            )
-        )
-
-
-    return {
-        "ok": True,
-        "message":
-            "Thanks — your details have been received."
-    }
-
-
-# =========================================================
-# ADMIN SUMMARY
-# =========================================================
-
-@app.get("/api/admin/summary")
-def admin_summary():
-
-    with db() as conn:
-
-        leads = conn.execute(
-            "SELECT COUNT(*) n FROM leads"
-        ).fetchone()["n"]
-
-
-        chats = conn.execute(
-            "SELECT COUNT(*) n FROM conversations"
-        ).fetchone()["n"]
-
-
-    return {
-        "leads": leads,
-        "conversations": chats
-    }
